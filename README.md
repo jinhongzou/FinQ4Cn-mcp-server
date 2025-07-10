@@ -1,5 +1,7 @@
 # FinQ4Cn MCP Server
 
+### English| [简体中文](README_zh-CN.md) 
+
 A dedicated MCP server tool designed for quantitative analysis, FinQ4Cn-mcp-server aims to provide large models with convenient, free, and open-source access to financial data. Built on the `akshare` library, the project focuses on China's A-share market, offering users comprehensive data support for stocks and related financial products. It is particularly well-suited for professionals engaged in quantitative analysis as well as users interested in China's domestic stock market, meeting their needs for data from China's financial markets. As an ideal choice tailored to domestic investors, FinQ4Cn-mcp-server allows users to effortlessly access multi-dimensional data, including but not limited to stock prices, financial indicators, and market volatility, empowering precise decision-making.
 
 ## Future Implementation

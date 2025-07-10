@@ -1,22 +1,30 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
+import io
+import base64
+import matplotlib.pyplot as plt
+
 from mcp.server.fastmcp import FastMCP
 
 from utils.stocks_common_metrics import StocksCommonMetrics
 from utils.news_report import News_Report
 from utils.quant_analysis import QuantAnalysis
 from utils.backtesting import pyBackTesting
+from utils.tools import PythonREPL
 
-# Initialize the MCP server
-mcp = FastMCP()
 stocks_common_metrics=StocksCommonMetrics()
 news_report=News_Report()
 quant_analysis=QuantAnalysis()
 back_testing = pyBackTesting()
+repl = PythonREPL()
+
+# Initialize the MCP server
+mcp = FastMCP()
+
 # MCP Tool: 
 @mcp.tool()
-def get_today_date(format: Optional[str]='YYYYMMDD') -> str:
+async def get_today_date(format: Optional[str]='YYYYMMDD') -> str:
     """
     Retrieve the current date.
 
@@ -44,7 +52,7 @@ def get_today_date(format: Optional[str]='YYYYMMDD') -> str:
 # ----------------- 股票常用指标类。 ----------------- #
 # MCP Tool: 
 @mcp.tool()
-def get_stock_code(name: str)  -> List[Dict[str, Any]]:
+async def get_stock_code(name: str)  -> List[Dict[str, Any]]:
     """
     Retrieve the stock codes of companies listed on China's A-share market.
 
@@ -62,7 +70,7 @@ def get_stock_code(name: str)  -> List[Dict[str, Any]]:
 
 # 经营业务结构
 @mcp.tool()
-def get_stock_business_structure(stock_code: str)  -> List[Dict[str, Any]]:
+async def get_stock_business_structure(stock_code: str)  -> List[Dict[str, Any]]:
     """
     Retrieve the main business structure of Chinese A-share listed companies for analyzing the company's core business, products, services, and revenue distribution.
 
@@ -88,7 +96,7 @@ def get_stock_business_structure(stock_code: str)  -> List[Dict[str, Any]]:
 
 # 历史价格数据
 @mcp.tool()
-def get_historical_stockprice_data(stock_code: str ,
+async def get_historical_stockprice_data(stock_code: str ,
                                    start_date: str,
                                    end_date: str, 
                                    period: Optional[str] = 'daily', 
@@ -123,7 +131,7 @@ def get_historical_stockprice_data(stock_code: str ,
 
 # 关键财报数据
 @mcp.tool()
-def get_stock_financial_abstract(stock_code: str ,
+async def get_stock_financial_abstract(stock_code: str ,
                                  indicator: Optional[str] = '按报告期')  -> List[Dict[str, Any]]:
     """
     Retrieve the financial report summary data of companies listed on China's A-share market.
@@ -165,7 +173,7 @@ def get_stock_financial_abstract(stock_code: str ,
 
 # 融资融券明细数据。
 @mcp.tool()
-def get_stock_margin_detail(stock_code: str, start_date: str, end_date: str, freq: str = "D") -> List[Dict[str, Any]]:
+async def get_stock_margin_detail(stock_code: str, start_date: str, end_date: str, freq: str = "D") -> List[Dict[str, Any]]:
     """
     Retrieve the margin trading and short selling details of companies listed on China's A-share market.
 
@@ -198,7 +206,7 @@ def get_stock_margin_detail(stock_code: str, start_date: str, end_date: str, fre
 
 # 分红送配详情数据
 @mcp.tool()
-def get_stock_fhps_detail(stock_code: str) -> List[Dict[str, Any]]:
+async def get_stock_fhps_detail(stock_code: str) -> List[Dict[str, Any]]:
     """
     Retrieve the historical dividend and rights issue details of companies listed on China's A-share market.
 
@@ -232,7 +240,7 @@ def get_stock_fhps_detail(stock_code: str) -> List[Dict[str, Any]]:
 
 # ----------------- 新闻报告类。用于获取股票相关的新闻报道。 ----------------- #
 @mcp.tool()
-def stock_news(stock_code: str, start_date: Optional[ str] = None, end_date: Optional[ str] = None) -> List[Dict[str, Any]]:
+async def stock_news(stock_code: str, start_date: Optional[ str] = None, end_date: Optional[ str] = None) -> List[Dict[str, Any]]:
     """
     Fetch the latest news articles and information related to a specific stock within a specified date range.
 
@@ -277,7 +285,7 @@ def financial_news(start_date: Optional[ str] = None, end_date: Optional[ str] =
 # ----------------- 量化分析 ----------------- #
 
 @mcp.tool()
-def get_stock_rsi_ma(stock_code: str ,
+async def get_stock_rsi_ma(stock_code: str ,
                      start_date: str,
                      end_date: str,
                      period: Optional[str] = 'daily',
@@ -311,7 +319,7 @@ def get_stock_rsi_ma(stock_code: str ,
 
 # ----------------- 回测 ----------------- #
 @mcp.tool()
-def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str, percent: float, stop_profit_pct:float)->str:
+async def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str, percent: float, stop_profit_pct:float)->str:
     """
     Perform backtesting on historical stock data using the specified trading strategy to evaluate its performance. 
     The strategy is as follows: if the stock is not currently held, buy the stock based on the specified holding percentage (percent) and set a profit-taking percentage (stop_profit_pct).
@@ -372,7 +380,7 @@ def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str,
 
     Example Usage:
         back_testing.Btesting(
-            stock_code="000001.SZ",
+            stock_code="601688",
             start_date="20221001",
             end_date="20231001",
             percent= 10,         # Dynamic parameter: Buying proportion
@@ -391,6 +399,74 @@ def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str,
         end_date=end_date,
         strategy_parm=strategy_parm
     )
+
+# ----------------- Python Tool----------------- #
+@mcp.tool()
+async def python_repl(code: str) -> str:
+    """
+    Execute Python code in a REPL (Read-Eval-Print Loop) environment.
+
+    Args:
+        code: The Python code to be executed.
+
+    Returns:
+        The output of the executed code or an error message if an exception occurs.
+    """
+
+    return repl.run(code)
+
+@mcp.tool()
+async def data_visualization(code: str) -> str:
+    """
+    Executes the provided Python code to generate a plot, saves the plot as a PNG image, 
+    encodes it in Base64 format, and returns it as a data URL.
+
+    This function is designed to execute user-provided Python code that generates a plot using libraries like Matplotlib. 
+    The generated plot is saved as a PNG image, encoded into Base64 format, and returned as a data URL for easy embedding 
+    in web pages or other applications.
+
+    Args:
+        code: The Python code to be executed. The code is expected to generate a plot using a plotting library such as Matplotlib.
+            Ensure that the code does not contain any harmful or malicious operations, as it will be executed in the current environment.
+
+    Returns:
+        If successful, the function returns a Base64 encoded string representing the generated plot image in PNG format, 
+        prefixed with "data:image/png;base64," for use as a data URL.
+        If the provided code fails to execute or the image encoding process fails, an error message is returned instead.
+
+    Example Usage:
+        The following example demonstrates how to use this function to generate a simple line plot:
+
+        ```python
+        import matplotlib.pyplot as plt
+
+        # Define the Python code to generate a plot
+        code = '''
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(6, 4))
+        plt.plot([1, 2, 3, 4], [10, 20, 25, 30], marker='o')
+        plt.title("Sample Plot")
+        plt.xlabel("X-axis")
+        plt.ylabel("Y-axis")
+        '''
+
+        # Call the function
+        result = data_visualization(code) #  a Base64-encoded data URL of the plot image
+
+        ```
+
+    Notes:
+        - Ensure that the provided code generates a valid plot before calling this function.
+        - The function uses `io.BytesIO` to handle binary image data, as plots are saved in binary format (PNG).
+        - If the code execution fails (e.g., due to syntax errors or missing dependencies), an error message is returned.
+        - Be cautious when executing untrusted code, as it may introduce security risks.
+
+    Raises:
+        Exception: Any exceptions raised during the execution of the provided code or the image encoding process are caught 
+                   and returned as part of the error message.
+    """
+
+    return repl.data_visualization(code)
 
 # Start the MCP server
 if __name__ == "__main__":
